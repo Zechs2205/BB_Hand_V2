@@ -15,9 +15,7 @@
 
 /* ── pins & IDs ────────────────────────────────────────────── */
 const uint8_t PWM_PIN[NUM_PWM] = {6, 7, 8, 9};
-const uint8_t FB_PIN [NUM_PWM] = {26,27,28,29};
-
-const uint8_t SCS_ID[NUM_SCS]  = {1, 2, 3, 4, 5};
+  
 
 /* Thumb,Index,Middle,Ring,Pinky  →  servo-index in SCS_ID[]      *
  * Ring & Pinky are swapped, so map 3↔4                            */

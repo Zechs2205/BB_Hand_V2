@@ -8,6 +8,7 @@
 #   A  idxAB  midAB  ringAB  pinkyAB  thumbFLX  idxFLX  midFLX  ringFLX  pinkyFLX  thumbAB
 #
 #   Example:  A -12  8  15  0  35  42  60  75  80  -5
+import mss                          # ← new
 
 # ────────────────────────── USER  CONFIG ──────────────────────────
 FINGERS = ["Thumb", "Index", "Middle", "Ring", "Pinky"]
@@ -20,7 +21,7 @@ BAUD_RATE   = 1000000
 FLEX_MIN  = [0,   0,   0,   0,   0]
 FLEX_MAX  = [270, 270, 270, 270, 270]
 FLEX_TLO  = [20,  15,  15,  15,  15]     # floor → clamp to FLEX_MIN
-FLEX_THI  = [50, 100, 110, 110, 90]     # ceil  → clamp to FLEX_MAX
+FLEX_THI  = [50, 100, 100, 100, 90]     # ceil  → clamp to FLEX_MAX
 FLEX_REV  = [False, False, False, False, False]
 
 # ABDUCTION / ADDUCTION (Index … Pinky) — raw ±30 °
@@ -111,7 +112,16 @@ except serial.SerialException as e:
 mp_hands = mp.solutions.hands
 hands = mp_hands.Hands(False, 1, 1, 0.7, 0.7)
 draw  = mp.solutions.drawing_utils
-cap   = cv2.VideoCapture(0)
+
+# ───────── SCREEN-CAPTURE SETUP ─────────
+sct      = mss.mss()
+monitor0 = sct.monitors[1]                       # primary screen
+img0     = np.array(sct.grab(monitor0))[:, :, :3]  # BGRA → BGR
+
+# Let the user draw the rectangle once
+x, y, w, h = map(int, cv2.selectROI("Pick region", img0, False, False))
+cv2.destroyWindow("Pick region")
+roi = {"left": x, "top": y, "width": w, "height": h}
 
 frame_cnt, t0 = 0, time.time()
 
@@ -122,10 +132,9 @@ def window_title(ab_rev_flags):
 
 
 # ─────────────────── MAIN LOOP ─────────────────────────────────
-while cap.isOpened():
-    ok, frame = cap.read()
-    if not ok: break
-    frame = cv2.flip(frame,1);  h,w = frame.shape[:2]
+while True:
+    frame = np.ascontiguousarray(np.array(sct.grab(roi))[:, :, :3])
+    h, w  = frame.shape[:2]
 
     res = hands.process(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
     if res.multi_hand_landmarks:
